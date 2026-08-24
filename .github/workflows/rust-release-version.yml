@@ -1,0 +1,57 @@
+name: Determine Rust release version
+
+on:
+  workflow_call:
+    outputs:
+      tag:
+        description: Release tag including the v prefix
+        value: ${{ jobs.version.outputs.tag }}
+      version:
+        description: Release version without the v prefix
+        value: ${{ jobs.version.outputs.version }}
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Check out repository and tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine next release version
+        id: version
+        shell: bash
+        run: |
+          base_tag="$(
+            git tag --list |
+              rg '^v[0-9]+\.[0-9]+$' |
+              sort -V |
+              tail -n 1
+          )"
+
+          if [[ -z "$base_tag" ]]; then
+            echo "::error::No base version tag found. Create and push a tag such as v0.0."
+            exit 1
+          fi
+
+          latest_patch="$(
+            git tag --list "${base_tag}.*" |
+              sed -E "s/^${base_tag//./\\.}\.([0-9]+)$/\1/" |
+              rg '^[0-9]+$' |
+              sort -n |
+              tail -n 1
+          )"
+
+          next_patch="$(( ${latest_patch:-0} + 1 ))"
+          release_tag="${base_tag}.${next_patch}"
+
+          printf 'tag=%s\n' "$release_tag" >> "$GITHUB_OUTPUT"
+          printf 'version=%s\n' "${release_tag#v}" >> "$GITHUB_OUTPUT"
