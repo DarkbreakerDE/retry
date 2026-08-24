@@ -14,7 +14,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Install prebuilt cargo-audit
+        uses: taiki-e/install-action@cargo-audit
+
       - name: Audit dependencies for security vulnerabilities
-        uses: rustsec/audit-check@v2.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        run: cargo audit
