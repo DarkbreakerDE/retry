@@ -1,0 +1,28 @@
+name: Rust CI
+
+on:
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    uses: ./.github/workflows/rust-format.yml
+
+  lint:
+    needs: format
+    uses: ./.github/workflows/rust-lint.yml
+
+  test:
+    needs: lint
+    uses: ./.github/workflows/rust-tests.yml
+
+  docs:
+    needs: test
+    uses: ./.github/workflows/rust-docs.yml
+
+  audit:
+    needs: docs
+    uses: ./.github/workflows/rust-audit.yml
